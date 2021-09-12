@@ -18,7 +18,10 @@ WORKDIR /submission
 COPY solution.py /submission
 COPY models /submission/models
 COPY model.py /submission
+COPY segment.py /submission
+COPY segment_utils.py /submission
 COPY wrappers.py /submission
 
-
+RUN ls /submission/
+RUN ls /submission/models
 ENTRYPOINT ["python3", "solution.py"]

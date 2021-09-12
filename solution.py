@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+from segment_utils import Segment
 from typing import Optional
 
 import numpy as np
@@ -12,12 +13,17 @@ from aido_schemas import EpisodeStart, protocol_agent_DB20, PWMCommands, DB20Com
 from wrappers import DTPytorchWrapper
 from PIL import Image
 import io
+from segment import start_segment
+from segment_utils import Segment
 
 
 class PytorchRLTemplateAgent:
     def __init__(self, load_model: bool, model_path: Optional[str]):
+        Segment()
         self.load_model = load_model
         self.model_path = model_path
+        self.segment_model = Segment.model
+        self.tf_segment = Segment.test_transform
 
 
     def init(self, context: Context):
@@ -62,13 +68,16 @@ class PytorchRLTemplateAgent:
     def on_received_observations(self, data: DB20Observations):
         camera: JPGImage = data.camera
         obs = jpg2rgb(camera.jpg_data)
-        self.current_image = self.preprocessor.preprocess(obs)
+        self.current_image = start_segment(obs, self.tf_segment, self.segment_model).transpose(2,0,1) #self.preprocessor.preprocess(obs)
 
     def compute_action(self, observation):
         #if observation.shape != self.preprocessor.transposed_shape:
         #    observation = self.preprocessor.preprocess(observation)
+        #observation = start_segment(observation, self.tf_segment, self.segment_model)
         action = self.model.predict(observation)
-        return action.astype(float)
+        #return [1., 1.]
+        print(action)
+        return [0.3, 0.3]#action.astype(float)
 
     def on_received_get_commands(self, context: Context):
         pwm_left, pwm_right = self.compute_action(self.current_image)
